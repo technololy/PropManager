@@ -1,0 +1,104 @@
+﻿@page "/"
+@inject ApplicationDbContext applicationDbContext;
+@inject NavigationManager navigationManager;
+
+<PageTitle>Properties</PageTitle>
+
+<header>
+    <h1 class="text-primary">List properties</h1>
+    <p class="text-success">All these properties are for sale.</p>
+</header>
+
+<MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ButtonOnClick">@ButtonText</MudButton>
+
+@foreach (var property in PropertiesInfos)
+{
+    <div class="card mb-3">
+        @if (property.PropertyImages?.Count> 0)
+        {
+            <div id="@($"carousel-{property.Id}")" class="carousel slide" data-bs-ride="carousel">
+                <div class="carousel-inner">
+                    @foreach (var image in property.PropertyImages)
+                    {
+                        <div class="carousel-item @(image == property.PropertyImages.First() ? "active" : "")">
+                            <img src="@image.ImageUrl" class="d-block mx-auto" style="max-width: 400px;" alt="Property Image">
+                        </div>
+                    }
+                </div>
+                <button class="carousel-control-prev" type="button" data-bs-target="@($"#carousel-{property.Id}")" data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Previous</span>
+                </button>
+                <button class="carousel-control-next" type="button" data-bs-target="@($"#carousel-{property.Id}")" data-bs-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Next</span>
+                </button>
+            </div>
+        }
+        <div class="card-body">
+            <h5 class="card-title">Price: @property.Price</h5>
+            <p class="card-text">Seller: @property.Seller</p>
+            <p class="card-text">Address: @property.Address</p>
+            <p class="card-text">Info: @property.Description</p>
+            <button onclick="(() => RequestViewing(property.Id))" class="btn btn-primary">Request Viewing</button>
+
+        </div>
+    </div>
+}
+
+
+@* @foreach (var property in PropertiesInfos)
+{
+    <div class="property">
+        <img src="@property.PropertyImages?.FirstOrDefault()?.ImageUrl" alt="Property Image" />
+        <p>Price: @property.Price</p>
+        <p>Seller: @property.Seller</p>
+        <p>Date Uploaded: @property.DateUploaded.ToShortDateString()</p>
+        <button @onclick="(() => RequestViewing(property.Id))">Request Viewing</button>
+    </div>
+} *@
+
+@code {
+
+    private List<Property> PropertiesInfos = new List<Property>(); // Fetch properties from database or predefined list
+
+    protected override Task OnInitializedAsync()
+    {
+        PropertiesInfos = applicationDbContext.Properties.Include(x=>x.PropertyImages).ToList();
+        if(PropertiesInfos != null)
+        {
+            ConvertImagePath();
+        }
+        return base.OnInitializedAsync();
+    }
+
+    private async Task RequestViewing(int propertyId)
+    {
+        // Logic to handle viewing request
+        // Redirect to a viewing request page or show a confirmation message
+    }
+
+    private void ConvertImagePath()
+    {
+        // Generate image URLs
+        foreach (var property in PropertiesInfos)
+        {
+            foreach (var propertyImages in property.PropertyImages)
+            {
+                var relativePath = propertyImages.ImageUrl.Replace("wwwroot", "").Replace("\\", "/").Replace("//","/"); // Get relative path for web access
+                var imageUrl = $"{navigationManager.BaseUri}{relativePath}"; // Construct full URL
+                propertyImages.ImageUrl = imageUrl;
+            }
+        }
+    }
+
+    public string ButtonText { get; set; } = "Click Me";
+    public int ButtonClicked { get; set; }
+
+    void ButtonOnClick()
+    {
+        ButtonClicked += 1;
+        ButtonText = "Click Me Again";
+    }
+}
+

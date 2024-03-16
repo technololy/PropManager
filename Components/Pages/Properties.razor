@@ -1,0 +1,31 @@
+﻿@page "/properties"
+
+<PageTitle>Properties</PageTitle>
+
+<header>
+    <h1 class="text-primary">List properties</h1>
+    <p class="text-success">All these properties are for sale.</p>
+</header>
+
+@foreach (var property in PropertiesInfos)
+{
+    <div class="property">
+        <img src="@property.PropertyImages.FirstOrDefault()?.ImageUrl" alt="Property Image" />
+        <p>Price: @property.Price</p>
+        <p>Seller: @property.Seller</p>
+        <p>Date Uploaded: @property.DateUploaded.ToShortDateString()</p>
+        <button @onclick="(() => RequestViewing(property.Id))">Request Viewing</button>
+    </div>
+}
+
+@code {
+    
+    private List<Property> PropertiesInfos = new List<Property>(); // Fetch properties from database or predefined list
+
+    private async Task RequestViewing(int propertyId)
+    {
+        // Logic to handle viewing request
+        // Redirect to a viewing request page or show a confirmation message
+    }
+}
+

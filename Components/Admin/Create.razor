@@ -1,0 +1,126 @@
+﻿@page "/Admin/Create"
+@rendermode InteractiveServer
+
+@inject ApplicationDbContext DbContext
+
+<PageTitle>Add New Property</PageTitle>
+<h1 class="text-primary">@PageHeader</h1>
+
+<div class="row">
+    <div class="col-md-6">
+
+        <EditForm Model="@property" FormName="submitProperty" OnValidSubmit="AddProperty" method="post">
+            <DataAnnotationsValidator />
+            <ValidationSummary class="text-danger" role="alert" />
+
+            <div class="form-floating mb-3">
+                <InputText @bind-Value="property.Address" class="form-control" placeholder="Property Address" />
+                <label for="property-address" class="form-label">Property Address</label>
+                <ValidationMessage For="() => property.Address" class="text-danger" />
+            </div>
+            <div class="form-floating mb-3">
+                <InputNumber @bind-Value="property.Price" class="form-control" placeholder="Price" />
+                <label for="property-price" class="form-label">Property Price</label>
+                <ValidationMessage For="() => property.Price" class="text-danger" />
+
+            </div>
+            <div class="form-floating mb-3">
+                <InputText @bind-Value="property.Seller" class="form-control" placeholder="Seller Name" />
+                <label for="property-seller" class="form-label">Property Seller Name</label>
+                <ValidationMessage For="() => property.Seller" class="text-danger" />
+
+            </div>
+            <div class="form-floating mb-3">
+                <InputTextArea @bind-Value="property.Description" class="form-control" placeholder="Property Description" />
+                <label for="property-description" class="form-label">Property Description</label>
+                <ValidationMessage For="() => property.Description" class="text-danger" />
+
+            </div>
+            <div class="form-floating mb-3">
+                <InputFile multiple OnChange="HandleFileSelected" class="form-control" accept=".jpg, .jpeg, .png" />
+                <label for="property-image" class="form-label">Property Image</label>
+
+            </div>
+
+
+            <button type="submit" class="w-100 btn btn-lg btn-primary">Save Property</button>
+
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromForm]
+    private Property property { get; set; } = new Property();
+    private const string UploadsFolder = "wwwroot/uploads";
+    private static List<IBrowserFile> browserFiles = default!;
+    private static string PageHeader;
+
+    protected override void OnInitialized()
+    {
+        PageHeader = "Add New Property";
+        base.OnInitialized();
+    }
+
+
+    private async Task AddProperty()
+    {
+        var filePaths = await SaveFileToPath(browserFiles);
+        var propertyImages = new List<PropertyImages>();
+
+        foreach (var item in filePaths)
+        {
+            propertyImages.Add(new PropertyImages { ImageUrl = item });
+        }
+
+        property.PropertyImages = propertyImages;
+        await DbContext.Properties.AddAsync(property);
+        await DbContext.SaveChangesAsync();
+        property = new Property();
+        PageHeader = "Successfully Added";
+    }
+
+    private void HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        browserFiles = e.GetMultipleFiles()?.ToList();
+        //var imageByte = await ReadFileAsBytes(e.File);
+    }
+
+    private async Task<byte[]> ReadFileAsBytes(IBrowserFile file)
+    {
+        using (var memoryStream = new MemoryStream())
+        {
+            await file.OpenReadStream().CopyToAsync(memoryStream);
+            return memoryStream.ToArray();
+        }
+    }
+
+    private async Task<List<string>> SaveFileToPath(List<IBrowserFile> files)
+    {
+        List<string> imageUrls = new List<string>();
+
+        foreach (var file in files)
+        {
+            var folderName = $"{UploadsFolder}/{property.Seller}/{property.Address}";
+            var fileName = Path.Combine(folderName, file.Name);
+
+            EnsureUploadsFolderExists(folderName);
+
+            using (var fileStream = new FileStream(fileName, FileMode.Create))
+            {
+                await file.OpenReadStream().CopyToAsync(fileStream);
+            }
+            imageUrls.Add(fileName);
+        }
+
+        return imageUrls;
+    }
+
+    private void EnsureUploadsFolderExists(string folderName)
+    {
+        if (!Directory.Exists(folderName))
+        {
+            Directory.CreateDirectory(folderName);
+        }
+    }
+}
