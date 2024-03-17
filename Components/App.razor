@@ -19,6 +19,25 @@
  
     <script src="_framework/blazor.web.js"></script>
     <script src="_content/MudBlazor/MudBlazor.min.js"></script>
+    <script>
+        function changeSlide(index) {
+            var carousel = document.getElementById('myCarousel');
+            alert("from carousel");
+            carousel.carousel(index);
+        }
+    </script>
+    <script>
+        window.initializeCarousel = () => {
+            $('#carouselExampleIndicators').carousel({ interval: 2000 });
+
+            //see step 2 to understand these news id's:
+            $('#carouselExampleIndicators-prev').click(
+                () => $('#carouselExampleIndicators').carousel('prev'));
+            $('#carouselExampleIndicators-next').click(
+                () => $('#carouselExampleIndicators').carousel('next'));
+
+        }
+    </script>
 
 </body>
 
