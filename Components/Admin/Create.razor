@@ -2,9 +2,12 @@
 @rendermode InteractiveServer
 
 @inject ApplicationDbContext DbContext
+@inject NavigationManager navigationManager;
+
 
 <PageTitle>Add New Property</PageTitle>
-<h1 class="text-primary">@PageHeader</h1>
+<h1 class="text-primary">Add New Property</h1>
+<PropManager.Components.Account.Shared.StatusMessage Message="@statusMessage" />
 
 <div class="row">
     <div class="col-md-6">
@@ -54,30 +57,33 @@
     private Property property { get; set; } = new Property();
     private const string UploadsFolder = "wwwroot/uploads";
     private static List<IBrowserFile> browserFiles = default!;
-    private static string PageHeader;
+    private string? statusMessage;
 
-    protected override void OnInitialized()
-    {
-        PageHeader = "Add New Property";
-        base.OnInitialized();
-    }
+    protected override void OnInitialized() => base.OnInitialized();
 
 
     private async Task AddProperty()
     {
         var filePaths = await SaveFileToPath(browserFiles);
+        if (filePaths == null)
+        {
+            return;
+        }
         var propertyImages = new List<PropertyImages>();
 
         foreach (var item in filePaths)
         {
-            propertyImages.Add(new PropertyImages { ImageUrl = item });
+            var relativePath = item.Replace("wwwroot", "").Replace("\\", "/").Replace("//", "/"); // Get relative path for web access
+            var imageUrl = $"{navigationManager.BaseUri}{relativePath}"; // Construct full URL
+
+            propertyImages.Add(new PropertyImages { ImageUrl = imageUrl });
         }
 
         property.PropertyImages = propertyImages;
         await DbContext.Properties.AddAsync(property);
         await DbContext.SaveChangesAsync();
         property = new Property();
-        PageHeader = "Successfully Added";
+        statusMessage = "Successfully Added";
     }
 
     private void HandleFileSelected(InputFileChangeEventArgs e)
@@ -101,6 +107,11 @@
 
         foreach (var file in files)
         {
+            if (file.Size > 513000)
+            {
+                statusMessage = "Error. File size exceeds 512kb";
+                return null;
+            }
             var folderName = $"{UploadsFolder}/{property.Seller}/{property.Address}";
             var fileName = Path.Combine(folderName, file.Name);
 

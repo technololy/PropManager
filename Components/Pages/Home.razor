@@ -56,10 +56,10 @@
     protected override Task OnInitializedAsync()
     {
         PropertiesInfos = applicationDbContext.Properties.Include(x => x.PropertyImages).ToList();
-        if (PropertiesInfos != null)
-        {
-            ConvertImagePath();
-        }
+        // if (PropertiesInfos != null)
+        // {
+        //     ConvertImagePath();
+        // }
         return base.OnInitializedAsync();
     }
 
